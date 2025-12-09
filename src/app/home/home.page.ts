@@ -125,18 +125,18 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
       startOnBoot: false,
 
       // HTTP Configuration
-      url: environment.CUSTOM_ENDPOINT,
+      url: 'https://1c499191-59c1-440d-95d5-0db970f46c74.mock.pstmn.io/post',//environment.CUSTOM_ENDPOINT,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
 
-      // Sync settings - send immediately
+      // Sync settings - batch 10 locations before sending
       autoSync: true,
-      autoSyncThreshold: 0,   // Sync immediately
-      batchSync: true,        // Don't batch
-      maxBatchSize: 10,       // One at a time
+      autoSyncThreshold: 10,  // Wait for 10 locations before syncing
+      batchSync: true,        // Enable batching
+      maxBatchSize: 10,       // Batch up to 10 locations
       maxDaysToPersist: 2,
 
       // Location settings
@@ -154,7 +154,7 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
 
     console.log('📋 Config:', JSON.stringify(config, null, 2));
 
-    // Only add authorization if using the tracker host (not a custom endpoint)
+    //for PRODUCTION MODE-  Only add authorization if using the tracker host (not a custom endpoint)
     // if (!useCustomEndpoint) {
     //   const orgname = (await Preferences.get({key: 'orgname'})).value;
     //   const username = (await Preferences.get({key: 'username'})).value;
@@ -177,21 +177,9 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
     //   };
     // }
 
-    // Step 2:  Configure the plugin
+    // Configure the plugin
     try {
-      //const state = await BackgroundGeolocation.ready(config);
-      BackgroundGeolocation.ready({
-        desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-        distanceFilter: 10,
-        stopOnTerminate: false,
-        startOnBoot: true,
-        url: 'https://1c499191-59c1-440d-95d5-0db970f46c74.mock.pstmn.io/post',//environment.CUSTOM_ENDPOINT,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-      }).then(async (state) => {
+      BackgroundGeolocation.ready(config).then(async (state) => {
         console.log("[ready] success", state);
         this.addEvent('State', new Date(), state);
         this.zone.run(() => {
@@ -377,24 +365,13 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
 
     this.addEvent('onLocation', new Date(location.timestamp), location);
 
-    // The plugin should auto-sync, but let's verify
-    console.log(' Waiting for auto-sync...');
+    // Log database count for debugging
+    const count = await BackgroundGeolocation.getCount();
+    console.log('📊 Locations in database:', count, '/ 10 (threshold)');
+    console.log('⏳ Will auto-sync when count reaches 10');
 
-    // Wait a bit then check if it was sent
-    setTimeout(async () => {
-      const count = await BackgroundGeolocation.getCount();
-      console.log(' Locations still in database:', count);
-
-      if (count > 0) {
-        console.warn('️ Location not sent yet, forcing manual sync...');
-        try {
-          await BackgroundGeolocation.sync();
-        } catch (error) {
-          console.error(' Sync failed, using manual send');
-          await this.manualSendLocation(location);
-        }
-      }
-    }, 2000);
+    // IMPORTANT: Do NOT manually call sync() here - it defeats batching!
+    // The plugin will automatically sync when autoSyncThreshold (10) is reached.
   }
 
   /// @event motionchange
@@ -418,14 +395,14 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
   /// @event http
   onHttp(response:HttpEvent) {
     console.log('='.repeat(50));
-    console.log('[HTTP SUCCESS]');
+    console.log('📤 [HTTP SUCCESS - BATCH SENT]');
     console.log('Status:', response.status);
     console.log('Success:', response.success);
     console.log('Response:', response.responseText);
     console.log('='.repeat(50));
 
     if (!response.success) {
-      console.error(' HTTP marked as not successful:', response.status);
+      console.error('⚠️ HTTP marked as not successful:', response.status);
     }
     this.addEvent('onHttp', new Date(), response);
   }
