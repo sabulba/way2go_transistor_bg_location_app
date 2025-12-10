@@ -74,16 +74,16 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
   }
 
   ngOnInit() {
-    console.log('⚙️ ngOnInit');
+    console.log('ngOnInit');
   }
 
   ngAfterContentInit() {
-    console.log('⚙️ ngAfterContentInit');
+    console.log('ngAfterContentInit');
     this.configureBackgroundGeolocation();
   }
 
   ionViewWillEnter() {
-    console.log('⚙️ ionViewWillEnter');
+    console.log('ionViewWillEnter');
   }
 
   ngOnDestroy() {
@@ -91,8 +91,8 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
   }
 
   async configureBackgroundGeolocation() {
-    console.log('🔧 Starting BackgroundGeolocation configuration...');
-    console.log('🎯 Target endpoint:', environment.CUSTOM_ENDPOINT);
+    console.log('Starting BackgroundGeolocation configuration...');
+    console.log('Target endpoint:', environment.CUSTOM_ENDPOINT);
 
     // Step 1:  Listen to BackgroundGeolocation events.
     this.subscribe(BackgroundGeolocation.onEnabledChange(this.onEnabledChange.bind(this)));
@@ -152,7 +152,7 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
       }
     };
 
-    console.log('📋 Config:', JSON.stringify(config, null, 2));
+    console.log('Config:', JSON.stringify(config, null, 2));
 
     //for PRODUCTION MODE-  Only add authorization if using the tracker host (not a custom endpoint)
     // if (!useCustomEndpoint) {
@@ -367,8 +367,8 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
 
     // Log database count for debugging
     const count = await BackgroundGeolocation.getCount();
-    console.log('📊 Locations in database:', count, '/ 10 (threshold)');
-    console.log('⏳ Will auto-sync when count reaches 10');
+    console.log('Locations in database:', count, '/ 10 (threshold)');
+    console.log('Will auto-sync when count reaches 10');
 
     // IMPORTANT: Do NOT manually call sync() here - it defeats batching!
     // The plugin will automatically sync when autoSyncThreshold (10) is reached.
@@ -395,14 +395,14 @@ export class HomePage implements OnInit, OnDestroy, AfterContentInit {
   /// @event http
   onHttp(response:HttpEvent) {
     console.log('='.repeat(50));
-    console.log('📤 [HTTP SUCCESS - BATCH SENT]');
+    console.log('[HTTP SUCCESS - BATCH SENT]');
     console.log('Status:', response.status);
     console.log('Success:', response.success);
     console.log('Response:', response.responseText);
     console.log('='.repeat(50));
 
     if (!response.success) {
-      console.error('⚠️ HTTP marked as not successful:', response.status);
+      console.error('HTTP marked as not successful:', response.status);
     }
     this.addEvent('onHttp', new Date(), response);
   }
